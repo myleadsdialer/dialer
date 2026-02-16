@@ -132,7 +132,7 @@ systemctl restart cron
 # 11. Dynamic Portal Setup
 # ---------------------------------------------------------
 sed -i '1i Listen 81' /etc/apache2/listen.conf
-sed -i "/Listen 443/a \                Listen $DYNAMIC_PORT" /etc/apache2/listen.conf
+sed -i '/^[[:space:]]*Listen[[:space:]]443[[:space:]]*$/a\                Listen 666' /etc/apache2/listen.conf
 sed -i "s/_default_:446/_default_:$DYNAMIC_PORT/g" /etc/apache2/vhosts.d/dynportal-ssl.conf
 
 sed -i \
