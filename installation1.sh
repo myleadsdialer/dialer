@@ -4,11 +4,11 @@
 # Target: ViciBox 11/12
 
 # ---------------------------------------------------------
-# 1. Interactive Domain Selection
+# 1. Interactive Selection (Domain & Superadmin Password)
 # ---------------------------------------------------------
 clear
 echo "====================================================="
-echo "       VICIBOX AUTOMATION SETUP SCRIPT"
+echo "        VICIBOX AUTOMATION SETUP SCRIPT"
 echo "====================================================="
 echo ""
 read -p "Enter your Domain/FQDN (e.g., dialer.example.com): " DOMAIN
@@ -18,9 +18,19 @@ if [ -z "$DOMAIN" ]; then
     exit 1
 fi
 
+# New interactive password prompt
+read -s -p "Enter new password for 'superadmin': " ADMIN_PASS
+echo "" # New line after silent input
+
+if [ -z "$ADMIN_PASS" ]; then
+    echo "Error: Password cannot be empty. Exiting."
+    exit 1
+fi
+
 echo ""
 echo "Configuration Details:"
 echo " - Domain: $DOMAIN"
+echo " - Admin User: superadmin"
 echo " - SSH Port: 51962"
 echo " - SIP/PJSIP Ports: 50961 / 50962"
 echo " - Dynamic Portal Port: 666"
@@ -32,7 +42,7 @@ if [[ $confirm != [yY] ]]; then
 fi
 
 # ---------------------------------------------------------
-# 2. Variables (Based on User Input)
+# 2. Variables
 # ---------------------------------------------------------
 SSH_PORT="51962"
 DYNAMIC_PORT="666"
@@ -45,8 +55,6 @@ DB_PASS="1234"
 # ---------------------------------------------------------
 echo "--- Updating system packages ---"
 zypper refresh && zypper update -y
-
-# Trigger timezone UI
 vicibox-timezone
 
 # ---------------------------------------------------------
@@ -56,14 +64,11 @@ echo "--- Configuring Apache and SSH ---"
 sed -i "1i ServerName localhost\nServerName $DOMAIN" /etc/apache2/httpd.conf
 sed -i "s/#Port 22/Port $SSH_PORT/g" /etc/ssh/sshd_config
 
-# Enable and start Firewall early to prevent lockouts
 systemctl enable --now firewalld
 firewall-cmd --zone=external --add-port=$SSH_PORT/tcp --permanent
 firewall-cmd --zone=public --add-port=$SSH_PORT/tcp --permanent
 
-# Disable VoIPBlack URL fetching in VB-firewall
 sed -i '49s|^|#|' /usr/bin/VB-firewall
-
 systemctl enable apache2.service
 systemctl start apache2.service
 
@@ -72,7 +77,6 @@ systemctl start apache2.service
 # ---------------------------------------------------------
 echo "--- Starting ViciBox Express Installation ---"
 vicibox-express
-
 echo "--- Starting SSL Configuration ---"
 vicibox-ssl
 
@@ -90,18 +94,19 @@ cp /srv/www/htdocs/agc/options-example.php /srv/www/htdocs/agc/options.php
 sed -i "s/\$user_login_first[[:space:]]*=[[:space:]]*'0';/\$user_login_first = '1';/" /srv/www/htdocs/agc/options.php 
 
 # ---------------------------------------------------------
-# 8. Database Permissions & Admin Setup
+# 8. Database Permissions & Admin Setup (Updated)
 # ---------------------------------------------------------
 echo "--- Configuring Database Settings ---"
 mysql -u cron -p$DB_PASS asterisk -e "UPDATE system_settings SET allow_ip_lists='1';"
 mysql -u cron -p$DB_PASS asterisk -e "UPDATE vicidial_ip_lists SET active='Y' WHERE ip_list_id IN ('ViciWhite','ViciBlack');"
 mysql -u cron -p$DB_PASS asterisk -e "UPDATE vicidial_users SET modify_ip_lists='1', ignore_ip_list='0' WHERE user='superadmin';"
-mysql -u cron -p$DB_PASS asterisk -e "UPDATE asterisk.vicidial_users SET user='superadmin',pass='qjUvsFadufLhsjh' WHERE user='6666';"
+
+# Use the ADMIN_PASS variable for the superadmin password
+mysql -u cron -p$DB_PASS asterisk -e "UPDATE asterisk.vicidial_users SET user='superadmin',pass='$ADMIN_PASS' WHERE user='6666';"
 
 # Grant Admin Access
-mysql -e "UPDATE asterisk.vicidial_users SET delete_users='1',delete_user_groups='1',delete_lists='1',delete_campaigns='1',delete_ingroups='1',delete_remote_agents='1',load_leads='1',campaign_detail='1',ast_admin_access='1',ast_delete_phones='1',delete_scripts='1',modify_leads='1',change_agent_campaign='1',agent_choose_ingroups='1',scheduled_callbacks='1',vicidial_recording='1',vicidial_transfers='1',delete_filters='1',alter_agent_interface_options='1',delete_call_times='1',modify_call_times='1',modify_users='1',modify_campaigns='1',modify_lists='1',modify_scripts='1',modify_filters='1',modify_ingroups='1',modify_usergroups='1',modify_remoteagents='1',modify_servers='1',view_reports='1',qc_user_level='1',add_timeclock_log='1',modify_timeclock_log='1',delete_timeclock_log='1',vdc_agent_api_access='1',modify_inbound_dids='1',delete_inbound_dids='1',download_lists='1',manager_shift_enforcement_override='1',export_reports='1',delete_from_dnc='1',callcard_admin='1',agent_choose_blended='1',custom_fields_modify='1',modify_shifts='1',modify_phones='1',modify_carriers='1',modify_labels='1',modify_statuses='1',modify_voicemail='1',modify_audiostore='1',modify_moh='1',modify_tts='1',modify_contacts='1',modify_same_user_level='1',alter_admin_interface_options='1',modify_custom_dialplans='1',modify_colors='1',modify_dial_prefix='1' WHERE user='superadmin';"
-mysql -e "UPDATE asterisk.servers SET max_vicidial_trunks=150;"
-
+mysql -u cron -p$DB_PASS asterisk -e "UPDATE asterisk.vicidial_users SET delete_users='1',delete_user_groups='1',delete_lists='1',delete_campaigns='1',delete_ingroups='1',delete_remote_agents='1',load_leads='1',campaign_detail='1',ast_admin_access='1',ast_delete_phones='1',delete_scripts='1',modify_leads='1',change_agent_campaign='1',agent_choose_ingroups='1',scheduled_callbacks='1',vicidial_recording='1',vicidial_transfers='1',delete_filters='1',alter_agent_interface_options='1',delete_call_times='1',modify_call_times='1',modify_users='1',modify_campaigns='1',modify_lists='1',modify_scripts='1',modify_filters='1',modify_ingroups='1',modify_usergroups='1',modify_remoteagents='1',modify_servers='1',view_reports='1',qc_user_level='1',add_timeclock_log='1',modify_timeclock_log='1',delete_timeclock_log='1',vdc_agent_api_access='1',modify_inbound_dids='1',delete_inbound_dids='1',download_lists='1',manager_shift_enforcement_override='1',export_reports='1',delete_from_dnc='1',callcard_admin='1',agent_choose_blended='1',custom_fields_modify='1',modify_shifts='1',modify_phones='1',modify_carriers='1',modify_labels='1',modify_statuses='1',modify_voicemail='1',modify_audiostore='1',modify_moh='1',modify_tts='1',modify_contacts='1',modify_same_user_level='1',alter_admin_interface_options='1',modify_custom_dialplans='1',modify_colors='1',modify_dial_prefix='1' WHERE user='superadmin';"
+mysql -u cron -p$DB_PASS asterisk -e "UPDATE asterisk.servers SET max_vicidial_trunks=150;"
 
 # ---------------------------------------------------------
 # 9. Apache Tuning
@@ -118,10 +123,7 @@ sed -i 's/MaxRequestsPerChild.*/MaxRequestsPerChild 100000/' /etc/apache2/server
 # ---------------------------------------------------------
 zypper install -y fail2ban
 systemctl enable --now fail2ban
-systemctl enable fail2ban.service
-systemctl start fail2ban.service
 mv /etc/fail2ban/jail.local /etc/fail2ban/jail.bkp
-
 asterisk -rx "module load codec_g729.so"
 
 (crontab -l 2>/dev/null; echo "@reboot /usr/bin/VB-firewall --white --dynamic --quiet") | crontab -
@@ -132,7 +134,7 @@ systemctl restart cron
 # 11. Dynamic Portal Setup
 # ---------------------------------------------------------
 sed -i '1i Listen 81' /etc/apache2/listen.conf
-sed -i '/^[[:space:]]*Listen[[:space:]]443[[:space:]]*$/a\                Listen 666' /etc/apache2/listen.conf
+sed -i "/Listen 443/a                 Listen $DYNAMIC_PORT" /etc/apache2/listen.conf
 sed -i "s/_default_:446/_default_:$DYNAMIC_PORT/g" /etc/apache2/vhosts.d/dynportal-ssl.conf
 
 sed -i \
@@ -143,9 +145,7 @@ sed -i \
 /srv/www/vhosts/dynportal/inc/defaults.inc.php
 
 systemctl restart apache2
-systemctl enable apache2
 systemctl restart asterisk
-systemctl enable asterisk
 
 # ---------------------------------------------------------
 # 12. Firewall Final Rules
@@ -175,23 +175,13 @@ dahdi_cfg -vv
 systemctl enable --now dahdi
 asterisk -rx "module load app_confbridge.so"
 
-
-
-
-
-
-
-
 cd /root
 git clone https://github.com/myleadsdialer/dialer.git
 cp -f dialer/jail.local /etc/fail2ban/
-
-# Set root as the owner and group
 sudo chown root:root /etc/fail2ban/jail.local
-
-# Set the permissions to 644
 sudo chmod 644 /etc/fail2ban/jail.local
 
+# Images
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/agc/images/
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/vicidial/images/
 cp -f dialer/vicidial_admin_web_logoSAMPLE.png /srv/www/htdocs/vicidial/images/
@@ -206,6 +196,5 @@ chmod 644 /srv/www/htdocs/agc/images/vicidial_admin_web_logo*
 chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo*
 chown wwwrun:www /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo*
 
-
-echo "--- Setup for $DOMAIN complete! Reboot recommended ---"
-
+echo "--- Setup for $DOMAIN complete! ---"
+echo "Superadmin password has been set. Reboot recommended."
