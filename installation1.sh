@@ -146,6 +146,8 @@ sed -i \
 /srv/www/vhosts/dynportal/inc/defaults.inc.php
 
 systemctl restart apache2
+systemctl enable apache2
+systemctl enable asterisk
 systemctl restart asterisk
 
 # ---------------------------------------------------------
