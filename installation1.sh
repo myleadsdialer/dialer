@@ -187,6 +187,7 @@ sudo chmod 644 /etc/fail2ban/jail.local
 # Images
 cd /srv/www/htdocs/vicidial/
 rm -f vicidial_admin_web_logo.gif
+cd 
 
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/agc/images/
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/vicidial/images/
