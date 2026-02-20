@@ -185,17 +185,30 @@ sudo chown root:root /etc/fail2ban/jail.local
 sudo chmod 644 /etc/fail2ban/jail.local
 
 # Images
+cd /srv/www/htdocs/vicidial/
+rm -f vicidial_admin_web_logo.gif
+
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/agc/images/
 cp -f dialer/vicidial_admin_web_logo.png /srv/www/htdocs/vicidial/images/
 cp -f dialer/vicidial_admin_web_logoSAMPLE.png /srv/www/htdocs/vicidial/images/
 cp -f dialer/vicidial_admin_web_logoDEFAULTAGENT.png /srv/www/htdocs/vicidial/images/
 cp -f dialer/vicidial_admin_web_logo.gif /srv/www/htdocs/vicidial/images/
 cp -f dialer/vicidial_admin_web_logo_small.gif /srv/www/htdocs/vicidial/images/
+cp -f dialer/vicidial_admin_web_logo.gif /srv/www/htdocs/vicidial/
 
 chmod -R +rwx /srv/www/htdocs/agc/images/
 chmod -R +rwx /srv/www/htdocs/vicidial/images/
 chmod -R +rwx /srv/www/htdocs/vicidial/
 chmod 644 /srv/www/htdocs/agc/images/vicidial_admin_web_logo*
+chmod 644 /srv/www/htdocs/vicidial/vicidial_admin_web_logo*
+
+chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo.png
+chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logoSAMPLE.png
+chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logoDEFAULTAGENT.png
+chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo.gif
+chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo_small.gif
+
+
 chmod 644 /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo*
 chown wwwrun:www /srv/www/htdocs/vicidial/images/vicidial_admin_web_logo*
 
